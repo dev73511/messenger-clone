@@ -30,7 +30,7 @@ const Header: React.FC<HeaderProps> = ({ conversation }) => {
 
     const { conversationId } = useConversation();
     const [drawerOpen, setDrawerOpen] = useState(false);
-    const [userTypingStatus, setUserTypingStatus] = useState<UserTypingType | null>();
+    const [userTypingStatus, setUserTypingStatus] = useState<UserTypingType[]>([]);
 
     const { members } = useActiveList();
     const isActive = members.indexOf(otherUser?.email!) !== -1;
@@ -53,13 +53,25 @@ const Header: React.FC<HeaderProps> = ({ conversation }) => {
 
         let clearTimerId: any;
         const userTypingHandler = (userTypingStatusData: UserTypingType) => {
-            setUserTypingStatus(userTypingStatusData);
+            console.log("userTypingHandler: ", userTypingStatusData);
+
+                if(userTypingStatusData.email !== session?.data?.user?.email) {
+                    setUserTypingStatus((current) => {
+                        if(find(current, {email: userTypingStatusData.email})){
+                            
+                            return current;
+                        }
+    
+                        return[...current, userTypingStatusData];
+                    })
+                }
+                
 
             //restart timeout timer
             clearTimeout(clearTimerId);
             clearTimerId = setTimeout(function () {
                 //clear user is typing message
-                setUserTypingStatus(null);
+                setUserTypingStatus([]);
             }, 900);
         }
 
@@ -71,7 +83,9 @@ const Header: React.FC<HeaderProps> = ({ conversation }) => {
 
         }
 
-    }, [conversationId])
+    }, [conversationId]);
+
+    console.log("userTypingStatus: ", userTypingStatus);
 
     return (
         <>
@@ -122,27 +136,39 @@ const Header: React.FC<HeaderProps> = ({ conversation }) => {
                         <div>
                             {conversation.name || otherUser.name}
                         </div>
+                            
+                        
+
                         {
-                            (userTypingStatus && userTypingStatus.email !== session?.data?.user?.email) ? (
-                                <div
-                                    className="
-                                    text-sm
-                                    font-light
-                                    text-neutral-500
-                                "
-                                >
-                                    typing..
-                                </div>
-                            ) : (
+                            conversation?.isGroup && userTypingStatus.length > 0 ? (
                                 <div className="
                                     text-sm
                                     font-light
                                     text-neutral-500
                                 ">
+                                    { userTypingStatus.map((item) => item.name).join(", ").concat("is typing") }
+                                </div>
+                            ) : !conversation?.isGroup && userTypingStatus.length > 0 ? (
+                                <div
+                                    className="
+                                    text-sm
+                                    font-light
+                                    text-neutral-500
+                                    "
+                                >
+                                    is typing
+                                </div>
+                            ) : (
+                                <div className="
+                                        text-sm
+                                        font-light
+                                        text-neutral-500
+                                    ">
                                     {statusText}
                                 </div>
                             )
                         }
+                        
 
 
                     </div>
