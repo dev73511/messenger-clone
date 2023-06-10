@@ -1,15 +1,17 @@
 "use client";
 
-import { useCallback, useMemo }  from 'react';
+import { useCallback, useEffect, useMemo, useState }  from 'react';
 import { useRouter } from 'next/navigation';
 import { Conversation, Message, User } from "@prisma/client";
 import { format } from 'date-fns';
 import { useSession } from 'next-auth/react';
 import clsx from 'clsx';
-import { FullConversationType } from '@/app/types';
+import { FullConversationType, UserTypingType } from '@/app/types';
 import useOtherUser from '@/app/hooks/useOtherUser';
 import Avatar from '@/app/components/Avatar';
 import AvatarGroup from '@/app/components/AvatarGroup';
+import { pusherClient } from '@/app/libs/pusher';
+import { find } from 'lodash';
 
 interface ConversationBoxProps {
     data: FullConversationType,
@@ -24,6 +26,7 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
     const otherUser = useOtherUser(data);
     const session = useSession();
     const router = useRouter();
+    const [userTypingStatus, setUserTypingStatus] = useState<UserTypingType[]>([]);
 
     const handleClick = useCallback(()=>{
 
@@ -67,6 +70,40 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
         return "Started a conversation";
 
     }, [lastMessage]);
+
+    useEffect(()=>{
+
+        let conversationId = data?.id;
+        console.log("USEEFFECT_CONVERSATION_ID", conversationId);
+        pusherClient.subscribe(conversationId);
+
+        let clearTimerId: any;
+        const userTypingHandler = (userTypingStatusData: UserTypingType) => {
+            if(userTypingStatusData.email !== session?.data?.user?.email) {
+                setUserTypingStatus((current) => {
+                    if(find(current, {email: userTypingStatusData.email})){
+                        
+                        return current;
+                    }
+                    return[...current, userTypingStatusData];
+                })
+            }
+
+             //restart timeout timer
+             clearTimeout(clearTimerId);
+             clearTimerId = setTimeout(function () {
+                 //clear user is typing message
+                 setUserTypingStatus([]);
+             }, 900);
+        }
+        pusherClient.bind('user:typing', userTypingHandler);
+
+        return () => {
+            pusherClient.unsubscribe(conversationId);
+            pusherClient.unbind('user:typing', userTypingHandler);
+        }
+
+    }, [data.id])
 
     return(
         <div
@@ -118,7 +155,7 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
                         </p>
                     )}
                     </div>
-                    <p
+                    {/* <p
                     className={clsx(`
                         truncate
                         text-sm
@@ -126,8 +163,25 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
                     hasSeen ? 'text-gray-500' : 'text-black font-medium'
                     )}
                     >
-                        { lastMessageText }
-                    </p>
+                        { lastMessageText } 
+                    </p> */}
+
+                       {
+                            (data.isGroup && (userTypingStatus.length > 0) && (userTypingStatus[0].conversationId == data.id)) ? (
+                                <p className={clsx(`truncate text-sm`, userTypingStatus.length > 0 ? 'text-green-700 font-medium' : '')}>
+                                    { userTypingStatus.map((item) => item.name).join(", ").concat("is typing...") }
+                                </p>
+                            ) : (!data?.isGroup && (userTypingStatus.length > 0) && (userTypingStatus[0].conversationId == data.id)) ? (
+                                <p className={clsx(`truncate text-sm`, userTypingStatus.length > 0 ? 'text-green-700 font-medium' : '')}>
+                                    is typing...
+                                </p>
+                            ) : (
+                                <p className={clsx(` truncate text-sm `, hasSeen ? 'text-gray-500' : 'text-black font-medium' )}>
+                                    { lastMessageText } 
+                                </p>
+                            )
+                       }
+                    
                 </div>
             </div>
         </div>
