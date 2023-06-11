@@ -11,7 +11,7 @@ const nextConfig = {
             'lh3.googleusercontent.com'
         ]
     },
-    target: "serverless"
+    output: 'standalone',
 }
 
 module.exports = nextConfig
