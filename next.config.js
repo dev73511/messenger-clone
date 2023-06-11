@@ -11,7 +11,7 @@ const nextConfig = {
             'lh3.googleusercontent.com'
         ]
     },
-    output: 'standalone',
+    output: 'export',
 }
 
 module.exports = nextConfig
