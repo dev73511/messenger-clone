@@ -31,11 +31,12 @@ const Header: React.FC<HeaderProps> = ({ conversation }) => {
     const { conversationId } = useConversation();
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [userTypingStatus, setUserTypingStatus] = useState<UserTypingType[]>([]);
+    // console.log("userTypingStatus >>", userTypingStatus);
 
     const { members } = useActiveList();
     const isActive = members.indexOf(otherUser?.email!) !== -1;
 
-    // console.log("drawerOpen >>", drawerOpen);
+    // console.log("otherUser >>", otherUser);
 
     const statusText = useMemo(() => {
 
@@ -53,9 +54,9 @@ const Header: React.FC<HeaderProps> = ({ conversation }) => {
 
         let clearTimerId: any;
         const userTypingHandler = (userTypingStatusData: UserTypingType) => {
-            console.log("userTypingHandler: ", userTypingStatusData);
+            console.log("userTypingHandler: ", userTypingStatusData, typeof userTypingStatusData);
 
-                if(userTypingStatusData.email !== session?.data?.user?.email) {
+                if(userTypingStatusData.email === otherUser.email) {
                     setUserTypingStatus((current) => {
                         if(find(current, {email: userTypingStatusData.email})){
                             
@@ -85,7 +86,7 @@ const Header: React.FC<HeaderProps> = ({ conversation }) => {
 
     }, [conversationId]);
 
-    console.log("userTypingStatus: ", userTypingStatus);
+    // console.log("userTypingStatus: ", userTypingStatus);
 
     return (
         <>

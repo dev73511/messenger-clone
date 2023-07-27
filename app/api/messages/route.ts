@@ -3,23 +3,65 @@ import { NextResponse } from "next/server";
 import prisma from "@/app/libs/prismadb";
 import { pusherServer } from "@/app/libs/pusher";
 
+
 export async function POST(request: Request) {
     try {
-
         const currentUser = await getCurrentUser();
         const body = await request.json();
         const {
             message,
             image,
-            conversationId
+            conversationId,
+            quotedMessageId
         } = body;
 
         if (!currentUser?.id || !currentUser?.email) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
-        const newMessage = await prisma.message.create({
-            data: {
+        let data: any = {}
+        let include: any = {}
+
+        if(quotedMessageId && quotedMessageId !== undefined && quotedMessageId !== "") {
+            data = {
+                body: message,
+                image: image,
+                quotedMessage: {
+                    connect: {
+                        id: quotedMessageId
+                    }
+                },
+                conversation: {
+                    connect: {
+                        id: conversationId
+                    },
+                },
+                sender: {
+                    connect: {
+                        id: currentUser.id
+                    }
+                },
+                seen: {
+                    connect: {
+                        id: currentUser.id
+                    }
+                }
+            }
+
+            include = {
+                seen: true,
+                sender: true,
+                quotedMessage: {
+                    include: {
+                        quotedMessage: true,
+                        sender: true,
+                    }
+                }
+            }
+
+        }else {
+
+            data = {
                 body: message,
                 image: image,
                 conversation: {
@@ -37,10 +79,20 @@ export async function POST(request: Request) {
                         id: currentUser.id
                     }
                 }
+            }
+
+            include = {
+                seen: true,
+                sender: true, 
+            }
+        }
+
+        const newMessage = await prisma.message.create({
+            data: {
+                ...data
             },
             include: {
-                seen: true,
-                sender: true,
+                ...include
             }
         });
 
@@ -67,6 +119,7 @@ export async function POST(request: Request) {
         });
 
         console.log("NEW_MESSAGE :", newMessage);
+        console.log("UPDATED_CONVERSATION :", updatedConversation);
 
         await pusherServer.trigger(conversationId, 'messages:new', newMessage);
 

@@ -77,4 +77,8 @@ model Message {
 
   senderId String @db.ObjectId
   sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  quotedMessageId String? @db.ObjectId @unique
+  quotedMessage Message? @relation("QuotedMessage", fields: [quotedMessageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  quotedMessageSelf Message? @relation("QuotedMessage")
 }

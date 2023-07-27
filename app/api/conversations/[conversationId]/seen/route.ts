@@ -51,7 +51,13 @@ export async function POST(request: Request, {params}: {params: IParams}){
             },
             include: {
                 sender: true,
-                seen: true
+                seen: true,
+                quotedMessage: {
+                    include: {
+                        quotedMessage: true,
+                        sender: true
+                    }
+                }
             },
             data: {
                 seen: {
