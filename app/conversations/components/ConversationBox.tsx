@@ -79,7 +79,7 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
 
         let clearTimerId: any;
         const userTypingHandler = (userTypingStatusData: UserTypingType) => {
-            if(userTypingStatusData.email !== session?.data?.user?.email) {
+            if(userTypingStatusData.email === otherUser.email) {
                 setUserTypingStatus((current) => {
                     if(find(current, {email: userTypingStatusData.email})){
                         

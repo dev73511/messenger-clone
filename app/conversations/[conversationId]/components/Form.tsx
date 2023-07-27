@@ -9,11 +9,16 @@ import { CldUploadButton } from "next-cloudinary";
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import useDebounce from "@/app/hooks/useDebounce";
+import QuotedMessageBox from "./QuotedMessageBox";
+import useQuotedMessage from "@/app/hooks/useQuotedMessage";
 
 const Form = () => {
 
     const { conversationId } = useConversation();
     const session = useSession();
+    const {messageId: quotedMessageId, onClose, onClearData} = useQuotedMessage((state) => ({
+        messageId: state.messageId, onClose: state.onClose, onClearData: state.onClearData
+    }));
 
     const {
         register,
@@ -34,9 +39,13 @@ const Form = () => {
         console.log("MESSAGE.ONSUBMIT >>", { ...data, conversationId });
 
         setValue('message', '', { shouldValidate: true });
+        onClose(); // * Close the QuotedMessageBox
+        onClearData(); // * Clear the store values
+        
         axios.post("/api/messages", {
             ...data,
-            conversationId
+            conversationId,
+            quotedMessageId
         })
     }
 
@@ -50,7 +59,7 @@ const Form = () => {
 
     const message = watch('message');
     // console.log("WATCH.MESSAGE: ", message);
-    
+
     const debouncedUserTyping = useDebounce(message, 200);
     useEffect(() => {
 
@@ -65,41 +74,43 @@ const Form = () => {
     }, [debouncedUserTyping])
 
     return (
-        <div
-            className="
+        <div className="border-t">
+            <QuotedMessageBox />
+            <div
+                className="
             py-4
             px-4
             bg-white
-            border-t
             flex
             items-center
             gap-2
             lg:gap-4
             w-full
         "
-        >
-            <CldUploadButton
-                options={{ maxFiles: 1 }}
-                onUpload={handleUpload}
-                uploadPreset="oyoczbom"
             >
-                <HiPhoto size={30} className="text-sky-500" />
-            </CldUploadButton>
-            <form
-                onSubmit={handleSubmit(onSubmit)}
-                className="flex items-center gap-2 lg:gap-4 w-full"
-            >
-                <MessageInput
-                    id="message"
-                    register={register}
-                    errors={errors}
-                    required
-                    placeholder="Write a message"
-                />
 
-                <button
-                    type="submit"
-                    className="
+                <CldUploadButton
+                    options={{ maxFiles: 1 }}
+                    onUpload={handleUpload}
+                    uploadPreset="oyoczbom"
+                >
+                    <HiPhoto size={30} className="text-sky-500" />
+                </CldUploadButton>
+                <form
+                    onSubmit={handleSubmit(onSubmit)}
+                    className="flex items-center gap-2 lg:gap-4 w-full"
+                >
+                    <MessageInput
+                        id="message"
+                        register={register}
+                        errors={errors}
+                        required
+                        placeholder="Write a message"
+                    />
+
+                    <button
+                        type="submit"
+                        className="
                     rounded-full
                     p-2
                     bg-sky-500
@@ -107,11 +118,13 @@ const Form = () => {
                     hover:bg-sky-600
                     transition
                 "
-                >
-                    <HiPaperAirplane size={18} className="text-white" />
-                </button>
-            </form>
+                    >
+                        <HiPaperAirplane size={18} className="text-white" />
+                    </button>
+                </form>
+            </div>
         </div>
+
     )
 }
 
