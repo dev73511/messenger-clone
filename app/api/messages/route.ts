@@ -118,14 +118,14 @@ export async function POST(request: Request) {
             }
         });
 
-        console.log("NEW_MESSAGE :", newMessage);
-        console.log("UPDATED_CONVERSATION :", updatedConversation);
+        // console.log("NEW_MESSAGE :", newMessage);
+        // console.log("UPDATED_CONVERSATION :", updatedConversation);
 
         await pusherServer.trigger(conversationId, 'messages:new', newMessage);
 
         const lastMessage = updatedConversation.messages[updatedConversation.messages.length -1];
 
-        console.log("UPDATED_CONVERSATION :", updatedConversation);
+        // console.log("UPDATED_CONVERSATION :", updatedConversation);
 
         updatedConversation.users.map((user) => {
             pusherServer.trigger(user.email!, 'conversation:update', {

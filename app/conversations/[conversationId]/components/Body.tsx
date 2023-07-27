@@ -17,7 +17,7 @@ const Body: React.FC<BodyProps> = ({
 }) => {
 
     const [messages, setMessages] = useState(initialMessages);
-    console.log("MessageList >>", messages);
+    // console.log("MessageList >>", messages);
     const bottomRef = useRef<HTMLDivElement>(null);
 
     const { conversationId } = useConversation();
@@ -46,7 +46,7 @@ const Body: React.FC<BodyProps> = ({
         }
 
         const UpdateMessageHandler = (newMessage: FullMessageType) => {
-            console.log("Body_NEW_MESSAGE >", newMessage);
+            // console.log("Body_NEW_MESSAGE >", newMessage);
             
             setMessages((current) => current.map((currentMessage) => {
                 if(currentMessage.id === newMessage.id){

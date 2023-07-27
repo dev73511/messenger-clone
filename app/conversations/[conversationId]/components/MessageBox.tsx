@@ -69,7 +69,7 @@ const MessageBox: React.FC<MessageBoxProps> = ({
 
     const handleQuotedMessage = (data: any) => {
         try {
-            console.log("handleQuotedMessage >>", data);
+            // console.log("handleQuotedMessage >>", data);
             onSetData(data);
             onOpen();
         } catch (error: any) {

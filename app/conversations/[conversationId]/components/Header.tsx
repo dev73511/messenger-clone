@@ -54,7 +54,7 @@ const Header: React.FC<HeaderProps> = ({ conversation }) => {
 
         let clearTimerId: any;
         const userTypingHandler = (userTypingStatusData: UserTypingType) => {
-            console.log("userTypingHandler: ", userTypingStatusData, typeof userTypingStatusData);
+            // console.log("userTypingHandler: ", userTypingStatusData, typeof userTypingStatusData);
 
                 if(userTypingStatusData.email === otherUser.email) {
                     setUserTypingStatus((current) => {

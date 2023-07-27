@@ -36,7 +36,7 @@ const Form = () => {
 
     const onSubmit: SubmitHandler<FieldValues> = (data) => {
 
-        console.log("MESSAGE.ONSUBMIT >>", { ...data, conversationId });
+        // console.log("MESSAGE.ONSUBMIT >>", { ...data, conversationId });
 
         setValue('message', '', { shouldValidate: true });
         onClose(); // * Close the QuotedMessageBox
@@ -50,7 +50,7 @@ const Form = () => {
     }
 
     const handleUpload = (result: any) => {
-        console.log("handleUpload.result >>", result);
+        // console.log("handleUpload.result >>", result);
         axios.post('/api/messages', {
             image: result?.info?.secure_url,
             conversationId

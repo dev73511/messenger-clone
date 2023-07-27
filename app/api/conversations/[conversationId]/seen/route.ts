@@ -31,7 +31,7 @@ export async function POST(request: Request, {params}: {params: IParams}){
             }
         });
 
-        console.log("CONVERSATIONS>>", conversation);
+        // console.log("CONVERSATIONS>>", conversation);
 
         if(!conversation) {
             return new NextResponse('Invalid ID', {status: 400});

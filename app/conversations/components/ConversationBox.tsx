@@ -74,7 +74,7 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
     useEffect(()=>{
 
         let conversationId = data?.id;
-        console.log("USEEFFECT_CONVERSATION_ID", conversationId);
+        // console.log("USEEFFECT_CONVERSATION_ID", conversationId);
         pusherClient.subscribe(conversationId);
 
         let clearTimerId: any;

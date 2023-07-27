@@ -64,7 +64,7 @@ const AuthForm = () => {
                 ...data,
                 redirect: false
             }).then((callback) => {
-                console.log("SIGNINCALLBACK", callback);
+                // console.log("SIGNINCALLBACK", callback);
                 if(callback?.error){
                     toast.error('Invalid credentials');
                 }
