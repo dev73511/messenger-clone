@@ -27,12 +27,6 @@ const getConversations = async () => {
                     include: {
                         sender: true,
                         seen: true,
-                        quotedMessage: {
-                            include: {
-                                quotedMessage: true,
-                                sender: true,
-                            }
-                        }
                     }
                 }
             }

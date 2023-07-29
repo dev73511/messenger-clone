@@ -24,14 +24,25 @@ export async function POST(request: Request, {params}: {params: IParams}){
             include: {
                 messages: {
                     include: {
-                        seen: true
+                        seen: true,
+                        sender: true,
+                        messages: {
+                            include: {
+                                parentMessage: {
+                                    include: {
+                                        seen: true,
+                                        sender: true
+                                    }
+                                }
+                            }
+                        }
                     }
                 },
                 users: true
             }
         });
 
-        // console.log("CONVERSATIONS>>", conversation);
+        console.log("CONVERSATIONS>>", conversation);
 
         if(!conversation) {
             return new NextResponse('Invalid ID', {status: 400});
@@ -52,12 +63,6 @@ export async function POST(request: Request, {params}: {params: IParams}){
             include: {
                 sender: true,
                 seen: true,
-                quotedMessage: {
-                    include: {
-                        quotedMessage: true,
-                        sender: true
-                    }
-                }
             },
             data: {
                 seen: {
@@ -68,18 +73,77 @@ export async function POST(request: Request, {params}: {params: IParams}){
             }
         })
 
+        // * lets find updatedMessages Relation
+        const updatedMessagesRelation = await prisma.messageRelation.findFirst({
+            where: {
+                messageId: lastMessage.id
+            },
+            include: {
+                parentMessage: {
+                    include: {
+                        sender: true
+                    }
+                },
+                messages: {
+                    include: {
+                        seen: true,
+                        sender: true
+                    }
+                }
+            }
+        })
+
+
+        console.log("UPDATED_MESSAGE >>", updatedMessages);
+
+        const updatedMessagesFormated = {
+            ...updatedMessages,
+            id: updatedMessages.id,
+            body: updatedMessages.body,
+            image: updatedMessages.image,
+            conversationId: updatedMessages.conversationId,
+            seen: updatedMessages.seen,
+            seenIds: updatedMessages.seenIds,
+            sender: updatedMessages.sender,
+            senderId: updatedMessages.senderId,
+            createdAt: updatedMessages.createdAt,
+            quotedMessageId: updatedMessagesRelation?.parentMessageId ?? null,
+            quotedMessage: updatedMessagesRelation?.parentMessage ?? null
+        }
+
         await pusherServer.trigger(currentUser.email, 'conversation:update', {
             id: conversationId,
-            messages: [updatedMessages]
+            messages: [updatedMessagesFormated]
         });
 
         if(lastMessage.seenIds.indexOf(currentUser.id) !== -1){
-            return NextResponse.json(conversation);
+            const conversationFormated: any = {
+                ...conversation,
+                id: conversation.id,
+                isGroup: conversation.isGroup,
+                lastMessageAt: conversation.lastMessageAt,
+                createdAt: conversation.createdAt,
+                messageIds: conversation.messageIds,
+                messages: conversation.messages.map((data, index) => ({
+                    id: data.id,
+                    body: data.body,
+                    createdAt: data.createdAt,
+                    conversationId: data.conversationId,
+                    image: data.image,
+                    seen: data.seen,
+                    seenIds: data.seenIds,
+                    senderId: data.senderId,
+                    sender: data.sender,
+                    quotedMessageId: data.messages[0]?.parentMessageId ?? null,
+                    quotedMessage: data.messages[0]?.parentMessage ?? null,
+                }))
+            }
+            return NextResponse.json(conversationFormated);
         }
 
-        await pusherServer.trigger(conversationId!, 'message:update', updatedMessages);
+        await pusherServer.trigger(conversationId!, 'message:update', updatedMessagesFormated);
 
-        return NextResponse.json(updatedMessages);
+        return NextResponse.json(updatedMessagesFormated);
 
     } catch (error: any) {
         console.log(error, "ERROR_MESSAGES_SEEN");

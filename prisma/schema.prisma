@@ -78,7 +78,17 @@ model Message {
   senderId String @db.ObjectId
   sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
-  quotedMessageId String? @db.ObjectId @unique
-  quotedMessage Message? @relation("QuotedMessage", fields: [quotedMessageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  quotedMessageSelf Message? @relation("QuotedMessage")
+  parentMessages MessageRelation[] @relation("ParentMessage")
+  messages MessageRelation[] @relation("Message")
+}
+
+model MessageRelation {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+
+  parentMessageId String @db.ObjectId
+  parentMessage Message @relation("ParentMessage",fields: [parentMessageId], references: [id], onDelete: Cascade)
+
+  messageId String @db.ObjectId
+  messages Message @relation("Message", fields: [messageId], references: [id], onDelete: Cascade)
 }
