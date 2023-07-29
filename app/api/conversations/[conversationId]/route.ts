@@ -17,16 +17,6 @@ export async function DELETE(request: Request, {params}: {params: IParams}){
             return new NextResponse('Unauthorized', {status: 400});
         }
 
-        // MAKE quotedMessageId TO NULL SO THAT WE WILL BE ABLE TO DELETE CONVERSATION
-        const setQuotedMessageIdToNull = await prisma.message.updateMany({
-            data: {
-                quotedMessageId: null
-            },
-            where: {
-                conversationId: conversationId
-            }
-        })
-
         const existingConversation = await prisma.conversation.findUnique({
             where: {
                 id: conversationId,

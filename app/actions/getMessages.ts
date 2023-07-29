@@ -9,10 +9,14 @@ const getMessages = async (conversationId: string) => {
             include: {
                 sender: true,
                 seen: true,
-                quotedMessage: {
+                messages: {
                     include: {
-                        quotedMessage: true,
-                        sender: true,
+                        parentMessage: {
+                            include: {
+                                seen: true,
+                                sender: true
+                            }
+                        }
                     }
                 }
             },
@@ -21,7 +25,20 @@ const getMessages = async (conversationId: string) => {
             }
         });
 
-        return messages;
+        return messages.map((data, index) => ({
+            body: data.body,
+            conversationId: data.conversationId,
+            createdAt: data.createdAt,
+            id: data.id,
+            image: data.image,
+            sender: data.sender,
+            senderId: data.senderId,
+            seenIds: data.seenIds,
+            seen: data.seen,
+            quotedMessageId: data?.messages[0]?.id ?? null,
+            quotedMessage: data?.messages[0]?.parentMessage ?? null
+        }));
+
     } catch (error: any) {
         return [];
     }

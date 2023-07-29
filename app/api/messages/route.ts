@@ -15,86 +15,79 @@ export async function POST(request: Request) {
             quotedMessageId
         } = body;
 
+        let messageRelation: any = {};
+
         if (!currentUser?.id || !currentUser?.email) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
-        let data: any = {}
-        let include: any = {}
-
-        if(quotedMessageId && quotedMessageId !== undefined && quotedMessageId !== "") {
-            data = {
-                body: message,
-                image: image,
-                quotedMessage: {
-                    connect: {
-                        id: quotedMessageId
-                    }
-                },
-                conversation: {
-                    connect: {
-                        id: conversationId
-                    },
-                },
-                sender: {
-                    connect: {
-                        id: currentUser.id
-                    }
-                },
-                seen: {
-                    connect: {
-                        id: currentUser.id
-                    }
-                }
-            }
-
-            include = {
-                seen: true,
-                sender: true,
-                quotedMessage: {
-                    include: {
-                        quotedMessage: true,
-                        sender: true,
-                    }
-                }
-            }
-
-        }else {
-
-            data = {
-                body: message,
-                image: image,
-                conversation: {
-                    connect: {
-                        id: conversationId
-                    },
-                },
-                sender: {
-                    connect: {
-                        id: currentUser.id
-                    }
-                },
-                seen: {
-                    connect: {
-                        id: currentUser.id
-                    }
-                }
-            }
-
-            include = {
-                seen: true,
-                sender: true, 
-            }
-        }
-
         const newMessage = await prisma.message.create({
-            data: {
-                ...data
+            data : {
+                body: message,
+                image: image,
+                conversation: {
+                    connect: {
+                        id: conversationId
+                    },
+                },
+                sender: {
+                    connect: {
+                        id: currentUser.id
+                    }
+                },
+                seen: {
+                    connect: {
+                        id: currentUser.id
+                    }
+                }
             },
-            include: {
-                ...include
+            include : {
+                seen: true,
+                sender: true
             }
         });
+
+        if(quotedMessageId && quotedMessageId !== null) {
+            const quotedMessage = await prisma.messageRelation.create({
+                data: {
+                    parentMessage: {
+                        connect: {
+                            id: quotedMessageId
+                        }
+                    },
+                    messages: {
+                        connect: {
+                            id: newMessage.id
+                        }
+                    }
+                },
+                include: {
+                    parentMessage: true,
+                    messages: true
+                }
+            });
+
+            messageRelation = await prisma.messageRelation.findFirst({
+                where: {
+                    messageId: newMessage.id
+                },
+                include: {
+                    parentMessage: {
+                        include: {
+                            sender: true
+                        }
+                    },
+                    messages: {
+                        include: {
+                            seen: true,
+                            sender: true
+                        }
+                    }
+                }
+            })
+        }
+
+        
 
         const updatedConversation = await prisma.conversation.update({
             where: {
@@ -118,10 +111,26 @@ export async function POST(request: Request) {
             }
         });
 
+        console.log("MESSAGE_RELATION >>", messageRelation);
+
         // console.log("NEW_MESSAGE :", newMessage);
         // console.log("UPDATED_CONVERSATION :", updatedConversation);
 
-        await pusherServer.trigger(conversationId, 'messages:new', newMessage);
+        const newMessageReformated = {
+            body: newMessage.body,
+            conversationId: newMessage.conversationId,
+            createdAt: newMessage.createdAt,
+            id: newMessage.id,
+            image: newMessage.image,
+            seen: newMessage.seen,
+            seenIds: newMessage.seenIds,
+            sender: newMessage.sender,
+            senderId: newMessage.senderId,
+            quotedMessageId: messageRelation?.parentMessage?.id ?? null,
+            quotedMessage: messageRelation?.parentMessage ?? null
+        }
+
+        await pusherServer.trigger(conversationId, 'messages:new', newMessageReformated);
 
         const lastMessage = updatedConversation.messages[updatedConversation.messages.length -1];
 
@@ -134,7 +143,7 @@ export async function POST(request: Request) {
             })
         });
 
-        return NextResponse.json(newMessage);
+        return NextResponse.json(newMessageReformated);
 
     } catch (error: any) {
         console.log(error, "ERROR_MESSAGES");
